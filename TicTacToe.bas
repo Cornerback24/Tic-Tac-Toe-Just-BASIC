@@ -1,19 +1,42 @@
+'This is an attempt at a minimax tic tac toe algorithm in Just BASIC
+'the search tree will be contained in tree$
+'the nodes will be strings delimited by commas, of the form
+'   parentIndex,state,move
+'states are 9 character strings of Xs, Os, and spaces
+'   XXOOOXXOX as an example
+
 dim tree$(1) 'this may eventually be the search tree
 global treeSize, maxTreeSize
 treeSize = 0
 maxTreeSize = 1
 
-a$ = ""
-for i = 0 to 30
-    a$ = a$ + " " + str$(i)
-next i
-for i = 0 to 30
-    call addToTree (nthword$(a$, i," "))
-    'call addToTree (chr$(34) + nthword$("  this is a   test", i, " ") + chr$(34))
-next i
-for i = 0 to 30
-    print chr$(34) + tree$(i) + chr$(34)
-next i
+
+sub printBoard state$
+    for i = 0 to 2
+        print mid$(state$, 3*i+1, 3)
+    next i
+end sub
+
+'returns "X", "O", "tie", or ""
+'"" means game not over
+function winner$(state$)
+    winner$ = "tie"
+    if instr(state$, " ") then winner$ = ""
+    if hasWon(state$, "X") then
+        winner$ = "X"
+        exit function
+    end if
+    if hasWon(state$, "O") then winner$ = "O"
+end function
+
+function hasWon(state$, player$)
+    hasWon = isWinState(state$, player$, 1, 2, 3) or isWinState(state$, player$, 4, 5, 6) or isWinState(state$, player$, 7, 8, 9) or isWinState(state$, player$, 1, 4, 7) or isWinState(state$, player$, 2, 5, 8) or isWinState(state$, player$, 3, 6, 9) or isWinState(state$, player$, 1, 5, 9)  or isWinState(state$, player$, 3, 5, 7)
+end function
+
+'returns true if c1, c2, and c3 all contain player$
+function isWinState(state$, player$, c1, c2, c3)
+    isWinState = mid$(state$, c1, 1) = player$ and mid$(state$, c2, 1) = player$ and mid$(state$, c3, 1) = player$
+end function
 
 sub addToTree node$ 
     treeSize = treeSize + 1
@@ -58,5 +81,6 @@ function nthword$(words$, n, delimiter$)
     next i
     nthword$ = word$
 end function
+
 
 
