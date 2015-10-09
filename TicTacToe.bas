@@ -2,14 +2,63 @@
 'the search tree will be contained in tree$
 'the nodes will be strings delimited by commas, of the form
 '   parentIndex,state,move
-'states are 9 character strings of Xs, Os, and spaces
+'states are 9 character strings of Xs, Os, and underscores
 '   XXOOOXXOX as an example
 
 dim tree$(1) 'this may eventually be the search tree
-global treeSize, maxTreeSize
+global treeSize, maxTreeSize, gameState$, currentPlayer$, AIPlayer$
 treeSize = 0
 maxTreeSize = 1
 
+call playGame
+print "Game over"
+stop
+
+sub playGame
+    board$ = "_________"
+    currentPlayer$ = "X"
+    AIPlayer$ = "O"
+    while winner$(board$) = ""
+        board$ = updateBoard$(board$, takeTurn(board$))
+        call printBoard board$ 
+        call switchPlayer
+        print "-----------------"
+    wend
+    print "winner: " + winner$(board$)
+end sub
+
+function updateBoard$(board$, move)
+    updateBoard$ = left$(board$, move - 1) + currentPlayer$ + mid$(board$, move + 1)
+end function
+
+'returns the number of the space moved to
+function takeTurn(board$)
+    if currentPlayer$ = AIPlayer$ then
+        takeTurn = AIMove(board$, AIPlayer$)
+    else
+        takeTurn = playerMove(board$)
+    end if
+end function
+
+sub switchPlayer
+    if currentPlayer$ = "X" then
+        currentPlayer$ = "O"
+    else
+        currentPlayer$ = "X"
+    end if
+end sub
+
+function AIMove(board$, AIPlayer$)
+    do
+        AIMove = int(rnd(1)*9) + 1
+    loop while not(mid$(board$, AIMove, 1) = "_")
+end function
+
+function playerMove(board$)
+    do
+        input "Your move: "; playerMove
+    loop while not(mid$(board$, playerMove, 1) = "_")
+end function
 
 sub printBoard state$
     for i = 0 to 2
@@ -21,7 +70,7 @@ end sub
 '"" means game not over
 function winner$(state$)
     winner$ = "tie"
-    if instr(state$, " ") then winner$ = ""
+    if instr(state$, "_") then winner$ = ""
     if hasWon(state$, "X") then
         winner$ = "X"
         exit function
@@ -35,7 +84,7 @@ end function
 
 'returns true if c1, c2, and c3 all contain player$
 function isWinState(state$, player$, c1, c2, c3)
-    isWinState = mid$(state$, c1, 1) = player$ and mid$(state$, c2, 1) = player$ and mid$(state$, c3, 1) = player$
+    isWinState = (mid$(state$, c1, 1) = player$ and mid$(state$, c2, 1) = player$ and mid$(state$, c3, 1) = player$)
 end function
 
 sub addToTree node$ 
