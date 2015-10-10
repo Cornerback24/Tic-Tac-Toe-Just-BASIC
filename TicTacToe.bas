@@ -14,7 +14,7 @@ call playGame
 'board$ = "XO_XO____"
 'call printBoard board$
 'print maxScore(board$, "O")
-'board$ = "XOXXOO_X_"
+'board$ = "___XXO_O_"
 'call printBoard board$
 'print minScore(board$, "O")
 
@@ -22,7 +22,7 @@ print "Game over"
 stop
 
 sub playGame
-    board$ = "_________"
+    board$ = "____X___O"
     call printBoard board$
     currentPlayer$ = "X"
     AIPlayer$ = "O"
@@ -107,7 +107,7 @@ function miniMaxMove(board$, player$)
     for i = 1 to val(nthword$(successors$, 0, ","))
         print i
         tempBoard$ = nthword$(successors$, i, ",")
-        score = maxScore(tempBoard$, player$)
+        score = minScore(tempBoard$, player$)
         'print "--"
         'print tempBoard$ + " " + str$(score)
         'print "--"
@@ -141,7 +141,7 @@ function findMax(board$, player$)
     'print ":: " + successors$
     for i = 1 to nsuccessors
         'call addToTree str$(node) + "," + nthword$(successors$, i, ",")
-        score = maxScore(nthword$(successors$, i, ","), player$)
+        score = minScore(nthword$(successors$, i, ","), player$)
         'print "  " + str$(score) + " " + nthword$(successors$, i, ",")
         'print "maxscore: " + tree$(treeSize-1) + " " + str$(score)
         if score > findMax then
@@ -151,19 +151,20 @@ function findMax(board$, player$)
     next i
 end function
 
-function maxScore(board$, maxPlayer$)
+'returns the score of a min node
+function minScore(board$, maxPlayer$)
     'board$ = nthword$(tree$(node), 1, ",")
     if winner$(board$) = maxPlayer$ then
-        maxScore = 1
+        minScore = 1
     else
         if winner$(board$) = "tie" then
-            maxScore = 0
+            minScore = 0
         else
             if winner$(board$) = "" then
                 'return minimum of sucessors
-                maxScore = findMin(board$, maxPlayer$)
+                minScore = findMin(board$, maxPlayer$)
             else
-                maxScore = -1
+                minScore = -1
             end if
         end if
     end if
@@ -179,9 +180,7 @@ function findMin(board$, player$)
     nsuccessors = val(nthword$(successors$, 0, ","))
     findMin = 1000
     for i = 1 to nsuccessors
-        'call addToTree str$(node) + "," + nthword$(successors$, i, ",")
-        score = minScore(nthword$(successors$, i, ","), player$) 'maximize the min score
-        'print "minScore " + tree$(treeSize-1) + " " + str$(score)
+        score = maxScore(nthword$(successors$, i, ","), player$) 'maximize the min score
         'print "    " + str$(score) + " " + nthword$(successors$, i, ",")
         if score < findMin then
             'findMin$ =  nthword$(successors$, i, ",")
@@ -190,17 +189,18 @@ function findMin(board$, player$)
     next i
 end function
 
-function minScore(board$, maxPlayer$)
+'returns the score of a max node
+function maxScore(board$, maxPlayer$)
     if winner$(board$) = maxPlayer$ then
-        minScore = 1
+        maxScore = 1
     else
         if winner$(board$) = "tie" then
-            minScore = 0
+            maxScore = 0
         else
             if winner$(board$) = "" then
-                minScore = findMax(board$, maxPlayer$)
+                maxScore = findMax(board$, maxPlayer$)
             else
-                minScore = -1
+                maxScore = -1
             end if
         end if
     end if
