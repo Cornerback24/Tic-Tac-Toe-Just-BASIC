@@ -10,7 +10,63 @@
 
 global treeSize, maxTreeSize, gameState$, currentPlayer$, AIPlayer$
 
-call playGame
+loadbmp "X", "x.bmp"
+loadbmp "O", "o.bmp"
+loadbmp "_", "blank.bmp"
+
+ WindowWidth = 528
+    WindowHeight = 430
+    UpperLeftX = DisplayWidth/2 - 296
+    UpperLeftY = DisplayHeight/2 - 215
+
+    statictext #main.statictext1, "(Player Turn Display)", 38, 21, 136, 20
+    statictext #main.statictext12, level$, 38, 41, 100, 20
+    bmpbutton #main.box1, "blank.bmp", playerInput, UL, 25, 100
+    bmpbutton #main.box2, "blank.bmp", playerInput, UL, 110, 100
+    bmpbutton #main.box3, "blank.bmp", playerInput, UL, 195, 100
+    bmpbutton #main.box4, "blank.bmp", playerInput, UL, 25, 185
+    bmpbutton #main.box7, "blank.bmp", playerInput, UL, 25, 270
+    bmpbutton #main.box5, "blank.bmp", playerInput, UL, 110, 185
+    bmpbutton #main.box6, "blank.bmp", playerInput, UL, 195, 185
+    bmpbutton #main.box8, "blank.bmp", playerInput, UL, 110, 270
+    bmpbutton #main.box9, "blank.bmp", playerInput, UL, 195, 270
+    graphicbox #main.graph1, 195, 10, 75, 75 'player turn display, doubles as keyboard input
+        'statictext #main.statictext2, "Current series", 300, 100, 100, 20
+        'statictext #main.statictext3, player1name$ + ": 0", 300, 120, 100, 20
+        'statictext #main.statictext4, player2name$ + ": 0", 300, 140, 100, 20
+        'graphicbox #main.graph2, 400, 100, 75, 75
+        'statictext #main.statictext5, "Best " + str$(gamesToWin) + " out of " + str$(gamesToWin*2 -1), 300, 180, 100, 20
+        'statictext #main.statictext9, "Current Leader:", 400, 80, 100, 20
+        'statictext #main.statictext11, "Ties: 0", 300, 160, 100, 20
+    'statictext #main.statictext6, "Series total:", 300, 240, 100, 20
+    'statictext #main.statictext7, player1name$ + ": 0", 300, 260, 100, 20
+    'statictext #main.statictext8, player2name$ + ": 0", 300, 280, 100, 20
+    'graphicbox #main.graph3, 400, 240, 75, 75
+    'statictext #main.statictext10, "Current Leader:", 400, 220, 100, 20
+    button #main.default, "Next Game", nextGame, UL, 335, 320, 100, 40
+    button #main.nothing, "", nothing, LL, 1, 1, 1, 1
+    'button #main.newGame, "New Game", [newGame], UL, 420, 375, 100, 25
+
+    statictext #main.gameMoves, "", 25, 375, 100, 20
+
+    open "Tic Tac Toe" for window_nf as #main
+    print #main, "trapclose closeMain"
+    print #main.graph1, "fill white; flush"
+    print #main.graph1, "when characterInput keyboard"
+    print #main, "font ms_sans_serif 0 16"
+    print #main.default, "!disable"
+    call playGame
+
+    wait
+
+sub closeMain windowhandle$
+    close #main
+    stop
+end sub
+
+sub playerInput windowhandle$
+    notice windowhandle$
+end sub
 'board$ = "XO_XO____"
 'call printBoard board$
 'print maxScore(board$, "O")
@@ -22,6 +78,8 @@ print "Game over"
 stop
 
 sub playGame
+    'test$ = "#main.box9"
+    'print #test$, "bitmap ";"x"
     board$ = "_________"
     call printBoard board$
     currentPlayer$ = "X"
@@ -78,6 +136,10 @@ end function
 sub printBoard state$
     for i = 0 to 2
         print mid$(state$, 3*i+1, 3)
+    next i
+    for i = 1 to 9
+        handle$ = "#main.box" + str$(i)
+        print #handle$, "bitmap ";mid$(state$, i, 1)
     next i
 end sub
 
