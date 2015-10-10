@@ -1,21 +1,29 @@
 'This is an attempt at a minimax tic tac toe algorithm in Just BASIC
 'the search tree will be contained in tree$
 'the nodes will be strings delimited by commas, of the form
-'   parentIndex,state,move
+'   parentIndex,state
 'states are 9 character strings of Xs, Os, and underscores
 '   XXOOOXXOX as an example
+'X
+'XO
+' OX
 
-dim tree$(1) 'this may eventually be the search tree
 global treeSize, maxTreeSize, gameState$, currentPlayer$, AIPlayer$
-treeSize = 0
-maxTreeSize = 1
 
 call playGame
+'board$ = "XO_XO____"
+'call printBoard board$
+'print maxScore(board$, "O")
+'board$ = "XOXXOO_X_"
+'call printBoard board$
+'print minScore(board$, "O")
+
 print "Game over"
 stop
 
 sub playGame
     board$ = "_________"
+    call printBoard board$
     currentPlayer$ = "X"
     AIPlayer$ = "O"
     while winner$(board$) = ""
@@ -49,10 +57,17 @@ sub switchPlayer
 end sub
 
 function AIMove(board$, AIPlayer$)
+    call resetTree
     do
-        AIMove = int(rnd(1)*9) + 1
+        AIMove = miniMaxMove(board$, AIPlayer$)
     loop while not(mid$(board$, AIMove, 1) = "_")
 end function
+
+sub resetTree
+    redim tree$(1) 'this may eventually be the search tree
+    treeSize = 0
+    maxTreeSize = 1
+end sub
 
 function playerMove(board$)
     do
@@ -65,6 +80,138 @@ sub printBoard state$
         print mid$(state$, 3*i+1, 3)
     next i
 end sub
+
+
+'returns comma seperated list of board after all possible moves by player
+'first word is number of succesors
+function successors$(board$, player$)
+    successors$ = ""
+    count = 0
+    for i = 1 to 9
+        if mid$(board$, i, 1) = "_" then
+            successors$ = successors$ + ","  + left$(board$, i - 1) + player$ + mid$(board$, i + 1)
+            count = count + 1
+        end if
+    next i
+    successors$ = str$(count) + successors$
+end function
+
+function miniMaxMove(board$, player$)
+    print ""
+    'call addToTree ("null," + board$)
+    'miniMaxMove = findMax(0, player$)
+    'print miniMaxMove
+    'print tree$(miniMaxMove)
+    maxVal = -1000
+    successors$ = successors$(board$, player$)
+    for i = 1 to val(nthword$(successors$, 0, ","))
+        print i
+        tempBoard$ = nthword$(successors$, i, ",")
+        score = maxScore(tempBoard$, player$)
+        'print "--"
+        'print tempBoard$ + " " + str$(score)
+        'print "--"
+        if score > maxVal then
+            nextBoard$ = tempBoard$
+            maxVal = score
+        end if
+    next i
+    'nextBoard$ = findMax$(board$)
+        'while not(val(nthword$(nextBoard$, 0, ",")) = 0)
+    '    nextBoard$ = tree$(val(nthword$(nextBoard$, 0, ",")))
+    '    print nextBoard$
+    'wend
+    'nextBoard$ = nthword$(nextBoard$, 1, ",")
+    'print ""
+    for i = 1 to 9
+        if mid$(board$, i, 1) = "_" and mid$(nextBoard$, i, 1) = player$ then miniMaxMove = i
+    next i
+    'print player$
+    'print board$
+    'print nextBoard$
+    'print miniMaxMove
+end function
+
+'return value of sucessor node with highest utitlity value
+function findMax(board$, player$)
+    'board$ = nthword$(tree$(node), 1, ",")
+    successors$ = successors$(board$, player$)
+    nsuccessors = val(nthword$(successors$, 0, ","))
+    findMax = -1000
+    'print ":: " + successors$
+    for i = 1 to nsuccessors
+        'call addToTree str$(node) + "," + nthword$(successors$, i, ",")
+        score = maxScore(nthword$(successors$, i, ","), player$)
+        'print "  " + str$(score) + " " + nthword$(successors$, i, ",")
+        'print "maxscore: " + tree$(treeSize-1) + " " + str$(score)
+        if score > findMax then
+            'findMax$ = nthword$(successors$, i, ",")
+            findMax = score
+        end if
+    next i
+end function
+
+function maxScore(board$, maxPlayer$)
+    'board$ = nthword$(tree$(node), 1, ",")
+    if winner$(board$) = maxPlayer$ then
+        maxScore = 1
+    else
+        if winner$(board$) = "tie" then
+            maxScore = 0
+        else
+            if winner$(board$) = "" then
+                'return minimum of sucessors
+                maxScore = findMin(board$, maxPlayer$)
+            else
+                maxScore = -1
+            end if
+        end if
+    end if
+end function
+
+function findMin(board$, player$)
+    'board$ = nthword$(tree$(node), 1, ",")
+    if player$ = "X" then
+        successors$ = successors$(board$, "O")
+    else
+        successors$ = successors$(board$, "X")
+    end if
+    nsuccessors = val(nthword$(successors$, 0, ","))
+    findMin = 1000
+    for i = 1 to nsuccessors
+        'call addToTree str$(node) + "," + nthword$(successors$, i, ",")
+        score = minScore(nthword$(successors$, i, ","), player$) 'maximize the min score
+        'print "minScore " + tree$(treeSize-1) + " " + str$(score)
+        'print "    " + str$(score) + " " + nthword$(successors$, i, ",")
+        if score < findMin then
+            'findMin$ =  nthword$(successors$, i, ",")
+            findMin = score
+        end if
+    next i
+end function
+
+function minScore(board$, maxPlayer$)
+    if winner$(board$) = maxPlayer$ then
+        minScore = 1
+    else
+        if winner$(board$) = "tie" then
+            minScore = 0
+        else
+            if winner$(board$) = "" then
+                minScore = findMax(board$, maxPlayer$)
+            else
+                minScore = -1
+            end if
+        end if
+    end if
+end function
+
+
+
+
+
+
+
 
 'returns "X", "O", "tie", or ""
 '"" means game not over
@@ -114,7 +261,7 @@ function nthword$(words$, n, delimiter$)
     while left$(words$, 1) = delimiter$
         words$ = mid$(words$, 2)
     wend
-    'extract word
+   'extract word
     for i = 0 to n
         delimIndex = instr(words$, delimiter$)
         if delimIndex > 0 then
