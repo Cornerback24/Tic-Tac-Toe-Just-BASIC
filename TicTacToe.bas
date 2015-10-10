@@ -8,7 +8,7 @@
 'XO
 ' OX
 
-global treeSize, maxTreeSize, gameState$, currentPlayer$, AIPlayer$
+global gameState$, currentPlayer$, AIPlayer$
 
 loadbmp "X", "x.bmp"
 loadbmp "O", "o.bmp"
@@ -67,12 +67,6 @@ end sub
 sub playerInput windowhandle$
     notice windowhandle$
 end sub
-'board$ = "XO_XO____"
-'call printBoard board$
-'print maxScore(board$, "O")
-'board$ = "___XXO_O_"
-'call printBoard board$
-'print minScore(board$, "O")
 
 print "Game over"
 stop
@@ -99,6 +93,7 @@ end function
 
 'returns the number of the space moved to
 function takeTurn(board$)
+    print #main.graph1, "drawbmp ";currentPlayer$;" 1 1"
     if currentPlayer$ = AIPlayer$ then
         takeTurn = AIMove(board$, AIPlayer$)
     else
@@ -115,17 +110,11 @@ sub switchPlayer
 end sub
 
 function AIMove(board$, AIPlayer$)
-    call resetTree
-    do
+    'do
         AIMove = miniMaxMove(board$, AIPlayer$)
-    loop while not(mid$(board$, AIMove, 1) = "_")
+    'loop while not(mid$(board$, AIMove, 1) = "_")
 end function
 
-sub resetTree
-    redim tree$(1) 'this may eventually be the search tree
-    treeSize = 0
-    maxTreeSize = 1
-end sub
 
 function playerMove(board$)
     do
@@ -310,22 +299,6 @@ end function
 function isWinState(state$, player$, c1, c2, c3)
     isWinState = (mid$(state$, c1, 1) = player$ and mid$(state$, c2, 1) = player$ and mid$(state$, c3, 1) = player$)
 end function
-
-sub addToTree node$ 
-    treeSize = treeSize + 1
-    if treeSize > maxTreeSize then 'double size of array
-        redim temp$(maxTreeSize)
-        for i = 0 to maxTreeSize - 1
-            temp$(i) = tree$(i)
-        next i
-        redim tree$(maxTreeSize*2)
-        for i = 0 to maxTreeSize
-            tree$(i) = temp$(i)
-        next i
-        maxTreeSize = maxTreeSize * 2
-    end if
-    tree$(treeSize - 1) = node$
-end sub
 
 'returns the nth word in words, where delimiter$ is the character that separates words
 'first word is 0th word
