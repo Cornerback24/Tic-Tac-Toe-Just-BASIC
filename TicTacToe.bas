@@ -8,7 +8,7 @@
 'XO
 ' OX
 
-global gameState$, currentPlayer$, AIPlayer$
+global gameState$, currentPlayer$, AIPlayer$, player1$
 
 loadbmp "X", "x.bmp"
 loadbmp "O", "o.bmp"
@@ -30,7 +30,7 @@ loadbmp "_", "blank.bmp"
     bmpbutton #main.box6, "blank.bmp", playerInput, UL, 195, 185
     bmpbutton #main.box8, "blank.bmp", playerInput, UL, 110, 270
     bmpbutton #main.box9, "blank.bmp", playerInput, UL, 195, 270
-    graphicbox #main.graph1, 195, 10, 75, 75 'player turn display, doubles as keyboard input
+    graphicbox #main.graph1, 195, 10, 75, 75 'player turn display
         'statictext #main.statictext2, "Current series", 300, 100, 100, 20
         'statictext #main.statictext3, player1name$ + ": 0", 300, 120, 100, 20
         'statictext #main.statictext4, player2name$ + ": 0", 300, 140, 100, 20
@@ -43,7 +43,7 @@ loadbmp "_", "blank.bmp"
     'statictext #main.statictext8, player2name$ + ": 0", 300, 280, 100, 20
     'graphicbox #main.graph3, 400, 240, 75, 75
     'statictext #main.statictext10, "Current Leader:", 400, 220, 100, 20
-    button #main.default, "Next Game", nextGame, UL, 335, 320, 100, 40
+    button #main.default, "New Game", newGame, UL, 335, 320, 100, 40
     button #main.nothing, "", nothing, LL, 1, 1, 1, 1
     'button #main.newGame, "New Game", [newGame], UL, 420, 375, 100, 25
 
@@ -55,9 +55,11 @@ loadbmp "_", "blank.bmp"
     print #main.graph1, "when characterInput keyboard"
     print #main, "font ms_sans_serif 0 16"
     print #main.default, "!disable"
-    call playGame
 
-    wait
+    player1$ = "X"
+    call playGame player1$
+
+    'wait
 
 sub closeMain windowhandle$
     close #main
@@ -65,31 +67,59 @@ sub closeMain windowhandle$
 end sub
 
 sub playerInput windowhandle$
-    notice windowhandle$
+    'notice windowhandle$ 
+    print currentPlayer$
+    print AIPlayer$
+    move = val(right$(windowhandle$, 1))
+    if mid$(gameState$, move, 1) = "_" then
+        gameState$ = updateBoard$(gameState$, move)
+        print "your turn"
+        call printBoard gameState$
+        if winner$(gameState$) = "" then
+            call switchPlayer
+            gameState$ = updateBoard$(gameState$, AIMove(gameState$, AIPlayer$))
+            call printBoard gameState$
+            call switchPlayer
+        end if
+        if not(winner$(gameState$) = "") then call gameOver
+    end if
 end sub
 
 print "Game over"
 stop
 
-sub playGame
+sub playGame player1$
     'test$ = "#main.box9"
     'print #test$, "bitmap ";"x"
-    board$ = "_________"
-    call printBoard board$
-    currentPlayer$ = "X"
+    gameState$ = "_________"
+    call printBoard gameState$
+    currentPlayer$ = player1$
     AIPlayer$ = "O"
-    while winner$(board$) = ""
-        board$ = updateBoard$(board$, takeTurn(board$))
-        call printBoard board$ 
+    while winner$(gameState$) = ""
+        'gameState$ = updateBoard$(gameState$, takeTurn(gameState$))
+        print #main.graph1, "drawbmp ";currentPlayer$;" 1 1"
+        if currentPlayer$ = AIPlayer$ then 'if AI moves first
+            gameState$ = updateBoard$(gameState$, AIMove(gameState$, AIPlayer$))
+            call printBoard gameState$
+            call switchPlayer
+        end if
+        wait
+            'gameState$ = updateBoard$(gameState$, playerMove(gameState$))
+        'end if
+        call printBoard gameState$ 
         call switchPlayer
         print "-----------------"
     wend
-    print "winner: " + winner$(board$)
+    print "winner: " + winner$(gameState$)
 end sub
 
 function updateBoard$(board$, move)
     updateBoard$ = left$(board$, move - 1) + currentPlayer$ + mid$(board$, move + 1)
 end function
+
+sub gameOver
+    print "winner: " + winner$(gameState$)
+end sub
 
 'returns the number of the space moved to
 function takeTurn(board$)
@@ -107,12 +137,11 @@ sub switchPlayer
     else
         currentPlayer$ = "X"
     end if
+    print #main.graph1, "drawbmp ";currentPlayer$;" 1 1"
 end sub
 
 function AIMove(board$, AIPlayer$)
-    'do
         AIMove = miniMaxMove(board$, AIPlayer$)
-    'loop while not(mid$(board$, AIMove, 1) = "_")
 end function
 
 
@@ -149,10 +178,6 @@ end function
 
 function miniMaxMove(board$, player$)
     print ""
-    'call addToTree ("null," + board$)
-    'miniMaxMove = findMax(0, player$)
-    'print miniMaxMove
-    'print tree$(miniMaxMove)
     maxVal = -1000
     successors$ = successors$(board$, player$)
     alpha = -10000
@@ -161,44 +186,25 @@ function miniMaxMove(board$, player$)
         print i
         tempBoard$ = nthword$(successors$, i, ",")
         score = minScore(tempBoard$, player$, alpha, beta)
-        'print "--"
-        'print tempBoard$ + " " + str$(score)
-        'print "--"
         if score > maxVal then
             nextBoard$ = tempBoard$
             maxVal = score
         end if
     next i
-    'nextBoard$ = findMax$(board$)
-        'while not(val(nthword$(nextBoard$, 0, ",")) = 0)
-    '    nextBoard$ = tree$(val(nthword$(nextBoard$, 0, ",")))
-    '    print nextBoard$
-    'wend
-    'nextBoard$ = nthword$(nextBoard$, 1, ",")
-    'print ""
     for i = 1 to 9
         if mid$(board$, i, 1) = "_" and mid$(nextBoard$, i, 1) = player$ then miniMaxMove = i
     next i
-    'print player$
-    'print board$
-    'print nextBoard$
-    'print miniMaxMove
 end function
 
 'return value of sucessor node with highest utitlity value
 function findMax(board$, player$, alpha, beta)
-    'board$ = nthword$(tree$(node), 1, ",")
     successors$ = successors$(board$, player$)
     nsuccessors = val(nthword$(successors$, 0, ","))
     findMax = -1000
-    'print ":: " + successors$
     for i = 1 to nsuccessors
-        'call addToTree str$(node) + "," + nthword$(successors$, i, ",")
         findMax = max(findMax, minScore(nthword$(successors$, i, ","), player$, alpha, beta))
         if findMax >= beta then exit function 'return findMax
         alpha = max(alpha, findMax)
-        'print "  " + str$(score) + " " + nthword$(successors$, i, ",")
-        'print "maxscore: " + tree$(treeSize-1) + " " + str$(score)
         'if score > findMax then
         '    'findMax$ = nthword$(successors$, i, ",")
         '    findMax = score
@@ -208,7 +214,6 @@ end function
 
 'returns the score of a min node
 function minScore(board$, maxPlayer$, alpha, beta)
-    'board$ = nthword$(tree$(node), 1, ",")
     if winner$(board$) = maxPlayer$ then
         minScore = 1
     else
@@ -226,7 +231,6 @@ function minScore(board$, maxPlayer$, alpha, beta)
 end function
 
 function findMin(board$, player$, alpha, beta)
-    'board$ = nthword$(tree$(node), 1, ",")
     if player$ = "X" then
         successors$ = successors$(board$, "O")
     else
@@ -238,7 +242,6 @@ function findMin(board$, player$, alpha, beta)
         findMin = min(findMin, maxScore(nthword$(successors$, i, ","), player$, alpha, beta)) 'maximize the min score
         if findMin <= alpha then exit function 'return findMin
         beta = min(beta, findMin)
-        'print "    " + str$(score) + " " + nthword$(successors$, i, ",")
         'if score < findMin then
         '    'findMin$ =  nthword$(successors$, i, ",")
         '    findMin = score
