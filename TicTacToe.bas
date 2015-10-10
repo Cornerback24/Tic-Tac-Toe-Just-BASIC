@@ -22,7 +22,7 @@ print "Game over"
 stop
 
 sub playGame
-    board$ = "____X___O"
+    board$ = "_________"
     call printBoard board$
     currentPlayer$ = "X"
     AIPlayer$ = "O"
@@ -104,10 +104,12 @@ function miniMaxMove(board$, player$)
     'print tree$(miniMaxMove)
     maxVal = -1000
     successors$ = successors$(board$, player$)
+    alpha = -10000
+    beta = 10000
     for i = 1 to val(nthword$(successors$, 0, ","))
         print i
         tempBoard$ = nthword$(successors$, i, ",")
-        score = minScore(tempBoard$, player$)
+        score = minScore(tempBoard$, player$, alpha, beta)
         'print "--"
         'print tempBoard$ + " " + str$(score)
         'print "--"
@@ -133,7 +135,7 @@ function miniMaxMove(board$, player$)
 end function
 
 'return value of sucessor node with highest utitlity value
-function findMax(board$, player$)
+function findMax(board$, player$, alpha, beta)
     'board$ = nthword$(tree$(node), 1, ",")
     successors$ = successors$(board$, player$)
     nsuccessors = val(nthword$(successors$, 0, ","))
@@ -141,18 +143,20 @@ function findMax(board$, player$)
     'print ":: " + successors$
     for i = 1 to nsuccessors
         'call addToTree str$(node) + "," + nthword$(successors$, i, ",")
-        score = minScore(nthword$(successors$, i, ","), player$)
+        findMax = max(findMax, minScore(nthword$(successors$, i, ","), player$, alpha, beta))
+        if findMax >= beta then exit function 'return findMax
+        alpha = max(alpha, findMax)
         'print "  " + str$(score) + " " + nthword$(successors$, i, ",")
         'print "maxscore: " + tree$(treeSize-1) + " " + str$(score)
-        if score > findMax then
-            'findMax$ = nthword$(successors$, i, ",")
-            findMax = score
-        end if
+        'if score > findMax then
+        '    'findMax$ = nthword$(successors$, i, ",")
+        '    findMax = score
+        'end if
     next i
 end function
 
 'returns the score of a min node
-function minScore(board$, maxPlayer$)
+function minScore(board$, maxPlayer$, alpha, beta)
     'board$ = nthword$(tree$(node), 1, ",")
     if winner$(board$) = maxPlayer$ then
         minScore = 1
@@ -162,7 +166,7 @@ function minScore(board$, maxPlayer$)
         else
             if winner$(board$) = "" then
                 'return minimum of sucessors
-                minScore = findMin(board$, maxPlayer$)
+                minScore = findMin(board$, maxPlayer$, alpha, beta)
             else
                 minScore = -1
             end if
@@ -170,7 +174,7 @@ function minScore(board$, maxPlayer$)
     end if
 end function
 
-function findMin(board$, player$)
+function findMin(board$, player$, alpha, beta)
     'board$ = nthword$(tree$(node), 1, ",")
     if player$ = "X" then
         successors$ = successors$(board$, "O")
@@ -180,17 +184,19 @@ function findMin(board$, player$)
     nsuccessors = val(nthword$(successors$, 0, ","))
     findMin = 1000
     for i = 1 to nsuccessors
-        score = maxScore(nthword$(successors$, i, ","), player$) 'maximize the min score
+        findMin = min(findMin, maxScore(nthword$(successors$, i, ","), player$, alpha, beta)) 'maximize the min score
+        if findMin <= alpha then exit function 'return findMin
+        beta = min(beta, findMin)
         'print "    " + str$(score) + " " + nthword$(successors$, i, ",")
-        if score < findMin then
-            'findMin$ =  nthword$(successors$, i, ",")
-            findMin = score
-        end if
+        'if score < findMin then
+        '    'findMin$ =  nthword$(successors$, i, ",")
+        '    findMin = score
+        'end if
     next i
 end function
 
 'returns the score of a max node
-function maxScore(board$, maxPlayer$)
+function maxScore(board$, maxPlayer$, alpha, beta)
     if winner$(board$) = maxPlayer$ then
         maxScore = 1
     else
@@ -198,7 +204,7 @@ function maxScore(board$, maxPlayer$)
             maxScore = 0
         else
             if winner$(board$) = "" then
-                maxScore = findMax(board$, maxPlayer$)
+                maxScore = findMax(board$, maxPlayer$, alpha, beta)
             else
                 maxScore = -1
             end if
@@ -206,6 +212,15 @@ function maxScore(board$, maxPlayer$)
     end if
 end function
 
+function min(n1, n2)
+    min = n1
+    if n2 < n1 then min = n2
+end function
+
+function max(n1, n2)
+    max = n1
+    if n2 > n1 then max = n2
+end function
 
 
 
