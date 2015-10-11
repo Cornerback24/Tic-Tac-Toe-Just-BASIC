@@ -35,6 +35,7 @@ nomainwin
     graphicbox #main.graph1, 195, 10, 75, 75 'player turn display
 
     button #main.newGame, "New Game", newGame, UL, 335, 320, 100, 40
+    button #main.makeAIMove, "Move for me!", playerInput, UL, 335, 270, 100, 40
 
 
     statictext #main.gameMoves, "", 25, 375, 100, 20
@@ -57,10 +58,11 @@ sub closeMain windowhandle$
 end sub
 
 sub playerInput windowhandle$
-    'notice windowhandle$ 
-    print currentPlayer$
-    print AIPlayer$
     move = val(right$(windowhandle$, 1))
+    if move = 0 then
+        call updateButtonStates, "disable"
+        move = miniMaxMove(gameState$, currentPlayer$) 'really if windowhandle$ = "#main.makeAIMove"
+    end if
     if mid$(gameState$, move, 1) = "_" then
         gameState$ = updateBoard$(gameState$, move)
         print "your turn"
@@ -147,7 +149,6 @@ sub AITurn
     gameState$ = updateBoard$(gameState$, AIMove(gameState$, AIPlayer$))
     call printBoard gameState$
     call updateButtonStates "enable"
-    print #main.AIProgress, ""
 end sub
 
 function AIMove(board$, AIPlayer$)
@@ -160,6 +161,7 @@ sub updateButtonStates state$
         handle$ = "#main.box" + str$(i)
         print #handle$, state$
     next i
+    print #main.makeAIMove, "!"+state$
 end sub
 
 
@@ -216,10 +218,11 @@ function miniMaxMove(board$, player$)
             maxVal = score
         end if
     next i
-    nextBoard$ = nthword$(options$, int(rnd(1)*numOptions), ",") 
+    nextBoard$ = nthword$(options$, int(rnd(1)*numOptions), ",")
     for i = 1 to 9
         if mid$(board$, i, 1) = "_" and mid$(nextBoard$, i, 1) = player$ then miniMaxMove = i
     next i
+    print #main.AIProgress, ""
 end function
 
 'return value of sucessor node with highest utitlity value
