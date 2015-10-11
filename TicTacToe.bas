@@ -95,7 +95,6 @@ sub playGame
         end if
         wait
     wend
-    print "winner: " + winner$(gameState$)
 end sub
 
 sub newGame windowhandle$
@@ -119,8 +118,8 @@ sub gameOver
     if winner$ = AIPlayer$ then
         print #main.playerTurnText, "Computer wins"
     else
-        if winnter$ = "tie" then
-            print #main.playerTurnText, "tie"
+        if winner$ = "tie" then
+            print #main.playerTurnText, "Tie game"
         else
             print #main.playerTurnText, "You win"
         end if
