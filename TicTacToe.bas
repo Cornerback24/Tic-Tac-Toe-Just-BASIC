@@ -198,16 +198,25 @@ function miniMaxMove(board$, player$)
     alpha = -10000
     beta = 10000
     nsuccessors = val(nthword$(successors$, 0, ","))
+    numOptions = 0
+    options$ = ""
     for i = 1 to nsuccessors
         print i
         print #main.AIProgress, str$(nsuccessors - i + 1)
         tempBoard$ = nthword$(successors$, i, ",")
         score = minScore(tempBoard$, player$, alpha, beta)
+        if score = maxVal then
+            options$ = options$ + "," + tempBoard$
+            numOptions = numOptions + 1
+        end if
         if score > maxVal then
-            nextBoard$ = tempBoard$
+            'nextBoard$ = tempBoard$
+            options$ = tempBoard$
+            numOptions = 1
             maxVal = score
         end if
     next i
+    nextBoard$ = nthword$(options$, int(rnd(1)*numOptions), ",") 
     for i = 1 to 9
         if mid$(board$, i, 1) = "_" and mid$(nextBoard$, i, 1) = player$ then miniMaxMove = i
     next i
