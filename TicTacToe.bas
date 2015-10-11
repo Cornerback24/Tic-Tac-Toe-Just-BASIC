@@ -14,13 +14,15 @@ loadbmp "X", "x.bmp"
 loadbmp "O", "o.bmp"
 loadbmp "_", "blank.bmp"
 
- WindowWidth = 528
+nomainwin
+
+    WindowWidth = 528
     WindowHeight = 430
     UpperLeftX = DisplayWidth/2 - 296
     UpperLeftY = DisplayHeight/2 - 215
 
-    statictext #main.statictext1, "(Player Turn Display)", 38, 21, 136, 20
-    statictext #main.statictext12, level$, 38, 41, 100, 20
+    statictext #main.playerTurnText, "(Player Turn Display)", 38, 21, 136, 20
+    statictext #main.AIProgress, "", 38, 41, 100, 20
     bmpbutton #main.box1, "blank.bmp", playerInput, UL, 25, 100
     bmpbutton #main.box2, "blank.bmp", playerInput, UL, 110, 100
     bmpbutton #main.box3, "blank.bmp", playerInput, UL, 195, 100
@@ -31,21 +33,9 @@ loadbmp "_", "blank.bmp"
     bmpbutton #main.box8, "blank.bmp", playerInput, UL, 110, 270
     bmpbutton #main.box9, "blank.bmp", playerInput, UL, 195, 270
     graphicbox #main.graph1, 195, 10, 75, 75 'player turn display
-        'statictext #main.statictext2, "Current series", 300, 100, 100, 20
-        'statictext #main.statictext3, player1name$ + ": 0", 300, 120, 100, 20
-        'statictext #main.statictext4, player2name$ + ": 0", 300, 140, 100, 20
-        'graphicbox #main.graph2, 400, 100, 75, 75
-        'statictext #main.statictext5, "Best " + str$(gamesToWin) + " out of " + str$(gamesToWin*2 -1), 300, 180, 100, 20
-        'statictext #main.statictext9, "Current Leader:", 400, 80, 100, 20
-        'statictext #main.statictext11, "Ties: 0", 300, 160, 100, 20
-    'statictext #main.statictext6, "Series total:", 300, 240, 100, 20
-    'statictext #main.statictext7, player1name$ + ": 0", 300, 260, 100, 20
-    'statictext #main.statictext8, player2name$ + ": 0", 300, 280, 100, 20
-    'graphicbox #main.graph3, 400, 240, 75, 75
-    'statictext #main.statictext10, "Current Leader:", 400, 220, 100, 20
-    button #main.default, "New Game", newGame, UL, 335, 320, 100, 40
-    button #main.nothing, "", nothing, LL, 1, 1, 1, 1
-    'button #main.newGame, "New Game", [newGame], UL, 420, 375, 100, 25
+
+    button #main.newGame, "New Game", newGame, UL, 335, 320, 100, 40
+
 
     statictext #main.gameMoves, "", 25, 375, 100, 20
 
@@ -54,10 +44,10 @@ loadbmp "_", "blank.bmp"
     print #main.graph1, "fill white; flush"
     print #main.graph1, "when characterInput keyboard"
     print #main, "font ms_sans_serif 0 16"
-    print #main.default, "!disable"
+    print #main.newGame, "!disable"
 
     player1$ = "X"
-    call playGame player1$
+    call playGame
 
     'wait
 
@@ -77,8 +67,9 @@ sub playerInput windowhandle$
         call printBoard gameState$
         if winner$(gameState$) = "" then
             call switchPlayer
-            gameState$ = updateBoard$(gameState$, AIMove(gameState$, AIPlayer$))
-            call printBoard gameState$
+            'gameState$ = updateBoard$(gameState$, AIMove(gameState$, AIPlayer$))
+            'call printBoard gameState$
+            call AITurn
             call switchPlayer
         end if
         if not(winner$(gameState$) = "") then call gameOver
@@ -88,29 +79,32 @@ end sub
 print "Game over"
 stop
 
-sub playGame player1$
-    'test$ = "#main.box9"
-    'print #test$, "bitmap ";"x"
+sub playGame
+    call updateButtonStates, "enable"
+    print #main.newGame, "!disable"
     gameState$ = "_________"
     call printBoard gameState$
     currentPlayer$ = player1$
     AIPlayer$ = "O"
+    call switchPlayer
+    call switchPlayer 'displays info about current player
     while winner$(gameState$) = ""
-        'gameState$ = updateBoard$(gameState$, takeTurn(gameState$))
-        print #main.graph1, "drawbmp ";currentPlayer$;" 1 1"
         if currentPlayer$ = AIPlayer$ then 'if AI moves first
-            gameState$ = updateBoard$(gameState$, AIMove(gameState$, AIPlayer$))
-            call printBoard gameState$
+            call AITurn
             call switchPlayer
         end if
         wait
-            'gameState$ = updateBoard$(gameState$, playerMove(gameState$))
-        'end if
-        call printBoard gameState$ 
-        call switchPlayer
-        print "-----------------"
     wend
     print "winner: " + winner$(gameState$)
+end sub
+
+sub newGame windowhandle$
+    if player1$ = "X" then
+        player1$ = "O"
+    else
+        player1$ = "X"
+    end if
+    call playGame
 end sub
 
 function updateBoard$(board$, move)
@@ -118,18 +112,22 @@ function updateBoard$(board$, move)
 end function
 
 sub gameOver
-    print "winner: " + winner$(gameState$)
-end sub
-
-'returns the number of the space moved to
-function takeTurn(board$)
-    print #main.graph1, "drawbmp ";currentPlayer$;" 1 1"
-    if currentPlayer$ = AIPlayer$ then
-        takeTurn = AIMove(board$, AIPlayer$)
+    call updateButtonStates "disable"
+    winner$ = winner$(gameState$)
+    print "winner: " + winner$
+    print #main.graph1, "drawbmp _ 1 1"
+    if winner$ = AIPlayer$ then
+        print #main.playerTurnText, "Computer wins"
     else
-        takeTurn = playerMove(board$)
+        if winnter$ = "tie" then
+            print #main.playerTurnText, "tie"
+        else
+            print #main.playerTurnText, "You win"
+        end if
     end if
-end function
+    print #main.newGame, "!enable"
+    print #main.newGame, "!setfocus"
+end sub
 
 sub switchPlayer
     if currentPlayer$ = "X" then
@@ -137,12 +135,33 @@ sub switchPlayer
     else
         currentPlayer$ = "X"
     end if
+    if currentPlayer$ = AIPlayer$ then
+        print #main.playerTurnText, "Computer's turn"
+    else
+        print #main.playerTurnText, "Your turn"
+    end if
     print #main.graph1, "drawbmp ";currentPlayer$;" 1 1"
+end sub
+
+sub AITurn
+    call updateButtonStates "disable"
+    gameState$ = updateBoard$(gameState$, AIMove(gameState$, AIPlayer$))
+    call printBoard gameState$
+    call updateButtonStates "enable"
+    print #main.AIProgress, ""
 end sub
 
 function AIMove(board$, AIPlayer$)
         AIMove = miniMaxMove(board$, AIPlayer$)
 end function
+
+'used to enable or disable all board buttons
+sub updateButtonStates state$ 
+    for i = 1 to 9
+        handle$ = "#main.box" + str$(i)
+        print #handle$, state$
+    next i
+end sub
 
 
 function playerMove(board$)
@@ -152,9 +171,6 @@ function playerMove(board$)
 end function
 
 sub printBoard state$
-    for i = 0 to 2
-        print mid$(state$, 3*i+1, 3)
-    next i
     for i = 1 to 9
         handle$ = "#main.box" + str$(i)
         print #handle$, "bitmap ";mid$(state$, i, 1)
@@ -182,8 +198,10 @@ function miniMaxMove(board$, player$)
     successors$ = successors$(board$, player$)
     alpha = -10000
     beta = 10000
-    for i = 1 to val(nthword$(successors$, 0, ","))
+    nsuccessors = val(nthword$(successors$, 0, ","))
+    for i = 1 to nsuccessors
         print i
+        print #main.AIProgress, str$(nsuccessors - i + 1)
         tempBoard$ = nthword$(successors$, i, ",")
         score = minScore(tempBoard$, player$, alpha, beta)
         if score > maxVal then
