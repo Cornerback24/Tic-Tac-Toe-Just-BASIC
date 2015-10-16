@@ -8,11 +8,26 @@
 'XO
 ' OX
 
-global gameState$, currentPlayer$, AIPlayer$, player1$
+global gameState$, currentPlayer$, AIPlayer$, player1$, lookUpTableSize
 
 loadbmp "X", "x.bmp"
 loadbmp "O", "o.bmp"
 loadbmp "_", "blank.bmp"
+
+dim lookUpTable$(10, 2)
+tableString$ = "_________,9,O________,_O_______,__O______,___O_____,____O____,_____O___,______O__,_______O_,________O" + chr$(13) + _
+"X________,1,X___O____" + chr$(13) + _
+"_X_______,4,OX_______,_XO______,_X__O____,_X_____O_" + chr$(13) + _
+"__X______,1,__X_O____" + chr$(13) + _
+"___X_____,4,O__X_____,___XO____,___X_O___,___X__O__" + chr$(13) + _
+"____X____,4,O___X____,__O_X____,____X_O__,____X___O" + chr$(13) + _
+"_____X___,4,__O__X___,___O_X___,____OX___,_____X__O" + chr$(13) + _
+"______X__,1,____O_X__" + chr$(13) + _
+"_______X_,4,_O_____X_,____O__X_,______OX_,_______XO" + chr$(13) + _
+"________X,1,____O___X"
+lookUpTableSize = 10
+'only call this once, will dim lookUpTable$
+call createLookupTable tableString$
 
 nomainwin
 
@@ -48,6 +63,7 @@ nomainwin
     print #main.newGame, "!disable"
 
     player1$ = "X"
+
     call playGame
 
     'wait
@@ -65,21 +81,15 @@ sub playerInput windowhandle$
     end if
     if mid$(gameState$, move, 1) = "_" then
         gameState$ = updateBoard$(gameState$, move)
-        print "your turn"
         call printBoard gameState$
         if winner$(gameState$) = "" then
             call switchPlayer
-            'gameState$ = updateBoard$(gameState$, AIMove(gameState$, AIPlayer$))
-            'call printBoard gameState$
             call AITurn
             call switchPlayer
         end if
         if not(winner$(gameState$) = "") then call gameOver
     end if
 end sub
-
-print "Game over"
-stop
 
 sub playGame
     call updateButtonStates, "enable"
@@ -115,7 +125,6 @@ end function
 sub gameOver
     call updateButtonStates "disable"
     winner$ = winner$(gameState$)
-    print "winner: " + winner$
     print #main.graph1, "drawbmp _ 1 1"
     if winner$ = AIPlayer$ then
         print #main.playerTurnText, "Computer wins"
@@ -194,30 +203,33 @@ function successors$(board$, player$)
 end function
 
 function miniMaxMove(board$, player$)
-    print ""
     maxVal = -1000
     successors$ = successors$(board$, player$)
     alpha = -10000
     beta = 10000
     nsuccessors = val(nthword$(successors$, 0, ","))
     numOptions = 0
-    options$ = ""
-    for i = 1 to nsuccessors
-        print i
-        print #main.AIProgress, str$(nsuccessors - i + 1)
-        tempBoard$ = nthword$(successors$, i, ",")
-        score = minScore(tempBoard$, player$, alpha, beta)
-        if score = maxVal then
-            options$ = options$ + "," + tempBoard$
-            numOptions = numOptions + 1
-        end if
-        if score > maxVal then
-            'nextBoard$ = tempBoard$
-            options$ = tempBoard$
-            numOptions = 1
-            maxVal = score
-        end if
-    next i
+    options$ = lookUp$(board$, player$)
+    if options$ <> "" then
+        numOptions = val(nthword$(options$, 0, ","))
+        options$ = mid$(options$, instr(options$, ",") + 1)
+    else
+        for i = 1 to nsuccessors
+            print #main.AIProgress, str$(nsuccessors - i + 1)
+            tempBoard$ = nthword$(successors$, i, ",")
+            score = minScore(tempBoard$, player$, alpha, beta)
+            if score = maxVal then
+                options$ = options$ + "," + tempBoard$
+                numOptions = numOptions + 1
+            end if
+            if score > maxVal then
+                'nextBoard$ = tempBoard$
+                options$ = tempBoard$
+                numOptions = 1
+                maxVal = score
+            end if
+        next i
+    end if
     nextBoard$ = nthword$(options$, int(rnd(1)*numOptions), ",")
     for i = 1 to 9
         if mid$(board$, i, 1) = "_" and mid$(nextBoard$, i, 1) = player$ then miniMaxMove = i
@@ -360,5 +372,43 @@ function nthword$(words$, n, delimiter$)
     nthword$ = word$
 end function
 
+function lookUp$(board$, player$)
+    lookUp$ = ""
+    board$ = change2Chars$(board$, player$, "O", otherPlayer$(player$), "X")
+    for i = 0 to lookUpTableSize
+        if board$ = lookUpTable$(i, 0) then lookUp$ = lookUpTable$(i, 1)
+    next i
+    lookUp$ = change2Chars$(lookUp$, "O", player$, "X", otherPlayer$(player$))
+end function
 
+sub createLookupTable tableString$
+    dim lookUpTable$(lookUpTableSize, 2)
+    for i = 0 to lookUpTableSize - 1
+        nextEntry$ = nthword$(tableString$, i, chr$(13))
+        lookUpTable$(i, 0) = nthword$(nextEntry$,0, ",")
+        lookUpTable$(i, 1) = mid$(nextEntry$, instr(nextEntry$, ",") + 1)
+    next i
+end sub
 
+'returns string$ replacing c1& with c1to$ and c2# with c2to$ where c1$ and c2$ are characters
+function change2Chars$(string$, c1$, c1to$, c2$, c2to$)
+    change2Chars$ = ""
+    for i = 1 to len(string$)
+        temp$ = mid$(string$, i, 1)
+        if temp$ = c1$ then
+            change2Chars$ = change2Chars$ + c1to$
+        else
+            if temp$ = c2$ then
+                change2Chars$ = change2Chars$ + c2to$
+            else
+                change2Chars$ = change2Chars$ + temp$
+            end if
+        end if
+    next i
+end function
+
+function otherPlayer$(player$)
+    otherPlayer$ = ""
+    if player$ = "X" then otherPlayer$ = "O"
+    if player$ = "O" then otherPlayer$ = "X"
+end function
